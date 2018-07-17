@@ -3,6 +3,7 @@ import json
 import os
 import sys
 
+import boto3
 import requests
 
 
@@ -54,8 +55,9 @@ def get_questions(date, page_size=200):
 
 
 def save(data, s3_bucket, filename):
-    f = open(filename, mode="w")
-    json.dump(data, f)
+    s3 = boto3.resource('s3')
+    s3_object = s3.Object(s3_bucket, filename)
+    s3_object.put(Body=data)
 
 
 if __name__ == "__main__":
@@ -72,6 +74,6 @@ if __name__ == "__main__":
 
     if s3_bucket:
         filename = f'{s3_object_prefix}{date}.json'
-        save(questions, s3_bucket, filename)
+        save(json.dumps(questions), s3_bucket, filename)
     else:
         print(f'Questions for {date}: {questions}')
