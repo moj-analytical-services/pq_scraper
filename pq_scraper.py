@@ -1,17 +1,15 @@
 from urllib.parse import urlencode
 import json
+import os
 import sys
 
 import requests
-
 
 
 API_URL = "https://lda.data.parliament.uk/answeredquestions.json"
 
 
 def _get_response_json(url):
-    print(f"Requesting '{url}'...")
-
     response = requests.get(url)
     if not response.ok:
         raise Exception(
@@ -55,7 +53,7 @@ def get_questions(date, page_size=200):
     return questions
 
 
-def save(data, filename):
+def save(data, s3_bucket, filename):
     f = open(filename, mode="w")
     json.dump(data, f)
 
@@ -66,7 +64,14 @@ if __name__ == "__main__":
         sys.exit(1)
 
     date = sys.argv[1]
-    questions = get_questions(date=date)
+    page_size = os.getenv('SCRAPER_PAGE_SIZE', 200)
+    s3_bucket = os.getenv('SCRAPER_S3_BUCKET', None)
+    s3_object_prefix = os.getenv('SCRAPER_S3_OBJECT_PREFIX', 'answered_questions_')
 
-    filename = f"answered_questions_{date}.json"
-    save(questions, filename=filename)
+    questions = get_questions(date=date, page_size=page_size)
+
+    if s3_bucket:
+        filename = f'{s3_object_prefix}{date}.json'
+        save(questions, s3_bucket, filename)
+    else:
+        print(f'Questions for {date}: {questions}')
