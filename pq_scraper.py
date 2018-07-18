@@ -55,25 +55,25 @@ def get_questions(date, page_size=200):
 
 
 def save(data, s3_bucket, filename):
-    s3 = boto3.resource('s3')
+    s3 = boto3.resource("s3")
     s3_object = s3.Object(s3_bucket, filename)
     s3_object.put(Body=data)
 
 
 if __name__ == "__main__":
     if len(sys.argv) == 1:
-        print(f'Usage: {sys.argv[0]} YYYY-mm-dd')
+        print(f"Usage: {sys.argv[0]} YYYY-mm-dd")
         sys.exit(1)
 
     date = sys.argv[1]
-    page_size = os.getenv('SCRAPER_PAGE_SIZE', 200)
-    s3_bucket = os.getenv('SCRAPER_S3_BUCKET', None)
-    s3_object_prefix = os.getenv('SCRAPER_S3_OBJECT_PREFIX', 'answered_questions_')
+    page_size = os.getenv("SCRAPER_PAGE_SIZE", 200)
+    s3_bucket = os.getenv("SCRAPER_S3_BUCKET", None)
+    s3_object_prefix = os.getenv("SCRAPER_S3_OBJECT_PREFIX", "answered_questions_")
 
     questions = get_questions(date=date, page_size=page_size)
 
     if s3_bucket:
-        filename = f'{s3_object_prefix}{date}.json'
+        filename = f"{s3_object_prefix}{date}.json"
         save(json.dumps(questions), s3_bucket, filename)
     else:
-        print(f'Questions for {date}: {questions}')
+        print(f"Questions for {date}: {questions}")
