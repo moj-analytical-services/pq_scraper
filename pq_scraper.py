@@ -47,6 +47,24 @@ def _result_pages(date, page_size):
 
 
 def get_questions(date, page_size=200):
+    """
+    Gets the answered PQs from the parliament.uk public API
+
+    Args:
+        date (str): Date for which to get the questions. Date must be in
+            ISO 8601 format (`YYYY-mm-dd`)
+        page_size (int, optional, default: 200): Number of questions to request
+            at each API call
+
+    Returns:
+        list: List of all answered PQs for the specified date sorted by ID (uin).
+            The list items are in the same format as returned by the API (
+            `["result"]["items"] elements from responses)
+
+    Raises:
+        Exception: Raised when one of the request response status is not `200 OK`
+    """
+
     questions = []
     for page_items in _result_pages(date=date, page_size=page_size):
         questions.extend(page_items)
@@ -55,12 +73,54 @@ def get_questions(date, page_size=200):
 
 
 def save(data, s3_bucket, filename):
+    """
+    Saves the data to S3
+
+    Args:
+        data: data to save
+        s3_bucket (str): S3 bucket where to save the data
+        filename (str): S3 key where to save the data
+
+    Examples:
+        >>> import json
+        >>> data = {'foo': 'bar'}
+        >>> save(json.dumps(data), 'my_bucket', 'my_file.json')
+    """
+
     s3 = boto3.resource("s3")
     s3_object = s3.Object(s3_bucket, filename)
     s3_object.put(Body=data)
 
 
-if __name__ == "__main__":
+def main():
+    """
+    Scrapes the answered Parliamentary Questions (PQ) for the date.
+
+    It prints them to stdout (standard output) if the `SCRAPER_S3_BUCKET`
+    environment variable is not set.
+
+    It saves them to the given S3 bucket if the `SCRAPER_S3_BUCKET` environment
+    variable is set. The filename can be configured by setting the
+    `SCRAPER_S3_OBJECT_PREFIX` environment variable.
+
+    Usage:
+        $ python3 pq_scraper.py DATE
+
+        *NOTE*: DATE must be a date in ISO 8601 format (`YYYY-mm-dd`)
+
+    Examples:
+        $ python3 pq_scraper.py 2017-07-30
+        (print to stdout the answered PQs asked on 30th July 2017)
+
+        $ SCRAPER_S3_BUCKET="my_bucket" python3 pq_scraper.py 2017-07-30
+        (saves the answered PQs asked on 30th July 2017 to the `my_bucket` S3
+        bucket, in the `answered_questions_2017-07-30.json` object)
+
+        $ SCRAPER_S3_BUCKET="my_bucket" SCRAPER_S3_OBJECT_PREFIX="pqs_" python3 pq_scraper.py 2017-07-30
+        (saves the answered PQs asked on 30th July 2017 to the `my_bucket` S3
+        bucket, in the `pqs_2017-07-30.json` object)
+    """
+
     if len(sys.argv) == 1:
         print(f"Usage: {sys.argv[0]} YYYY-mm-dd")
         sys.exit(1)
@@ -77,3 +137,7 @@ if __name__ == "__main__":
         save(json.dumps(questions), s3_bucket, filename)
     else:
         print(f"Questions for {date}: {questions}")
+
+
+if __name__ == "__main__":
+    main()
