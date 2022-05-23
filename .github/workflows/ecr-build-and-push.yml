@@ -1,0 +1,22 @@
+name: Build, tag, push, and make available image to pods
+on:
+  release:
+    types: [published]
+    tags:
+      - "v*.*.*"
+permissions:
+  id-token: write
+  contents: read
+jobs:
+  build-tag-push:
+    name: Build, tag, and push image to Amazon ECR
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Build, tag, and push image to Amazon ECR
+        uses: moj-analytical-services/actions-build-and-push-to-ecr@main
+        with:
+          role-to-assume: ${{ secrets.AWS_ECR_PUSH_ROLE }}
+      - name: Add cross-account permissions to an image on ECR
+        uses: moj-analytical-services/actions-cross-account-ecr@main
+        with:
+          role-to-assume: ${{ secrets.AWS_ECR_PUSH_ROLE }}
