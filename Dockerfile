@@ -1,6 +1,6 @@
 ARG DE_ECR
 #FROM python:3.7-alpine
-FROM ${DE_ECR}/python:3.9-slim
+FROM ${DE_ECR}/python:3.7-alpine
 
 #WORKDIR /etl
 
